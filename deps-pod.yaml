@@ -1,0 +1,25 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: expensas-deps
+spec:
+  containers:
+    - name: db
+      image: docker.io/postgres:14.3-alpine3.16
+      env:
+        - name: POSTGRES_USER
+          value: expensas
+        - name: POSTGRES_PASSWORD
+          value: expensas
+      volumeMounts:
+        - name: db-volume
+          mountPath: /var/lib/postgresql/data
+      securityContext:
+        seLinuxOptions:
+          type: spc_t
+      ports:
+        - hostPort: 5432
+  volumes:
+    - name: db-volume
+      hostPath:
+        path: .db
