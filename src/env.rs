@@ -4,6 +4,7 @@ use std::{collections::HashMap, error::Error, net::SocketAddr, str::FromStr};
 pub struct Env {
     pub rest_socket: SocketAddr,
     pub database_url: String,
+    pub secret: String,
 }
 
 pub async fn init() -> anyhow::Result<Env> {
@@ -19,6 +20,7 @@ pub async fn init() -> anyhow::Result<Env> {
     Ok(Env {
         rest_socket: read(&mut map, "REST_SOCKET")?,
         database_url: read(&mut map, "DATABASE_URL")?,
+        secret: read(&mut map, "SECRET")?,
     })
 }
 

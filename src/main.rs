@@ -1,6 +1,7 @@
-use axum::routing::get;
+use axum::routing::{get, post};
 use sqlx::postgres::PgPoolOptions;
 
+mod auth;
 mod env;
 mod queries;
 mod routes;
@@ -8,10 +9,22 @@ mod routes;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let env = env::init().await?;
+    let hmac = auth::hmac(&env)?;
 
-    let pg = PgPoolOptions::new().connect(&env.database_url).await?;
+    let db = PgPoolOptions::new().connect(&env.database_url).await?;
+    sqlx::migrate!().run(&db).await?;
 
-    let router = axum::Router::new().route("/", get(routes::oiblz));
+    queries::create_session(&db, queries::Person::Ale).await?;
+
+    let router = axum::Router::new()
+        .route("/", get(routes::oiblz))
+        .route("/session/ask/:who", post(routes::post_session_ask))
+        .route("/session/state", get(routes::get_session_state))
+        .route("/session/confirm/:id", post(routes::post_session_confirm))
+        .route("/session/convert", post(routes::post_session_convert))
+        .route("/session/confirmable", get(routes::get_session_confirmable))
+        .layer(axum::Extension(hmac))
+        .layer(axum::Extension(db));
 
     axum::Server::bind(&env.rest_socket)
         .serve(router.into_make_service())

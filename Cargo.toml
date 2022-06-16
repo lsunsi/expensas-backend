@@ -4,7 +4,11 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = { version = "1.0.57", default-features = false, features = ["std"] }
-axum = { version = "0.5.7", default-features = false, features = ["http1", "json"] }
-sqlx = { version = "0.5.13", default-features = false, features = ["macros", "migrate", "postgres", "runtime-tokio-rustls"] }
-tokio = { version = "1.19.2", default-features = false, features = ["io-util", "macros", "rt-multi-thread", "time"] }
+anyhow = { version = "1.0.57", features = ["std"], default-features = false }
+axum = { version = "0.5.7", features = ["http1", "json"], default-features = false }
+base64 = { version = "0.13.0", default-features = false }
+hmac = { version = "0.12.1", default-features = false }
+serde = { version = "1.0.137", features = ["derive"], default-features = false }
+sha2 = { version = "0.10.2", default-features = false }
+sqlx = { version = "0.5.13", features = ["macros", "migrate", "postgres", "runtime-tokio-rustls", "time"], default-features = false }
+tokio = { version = "1.19.2", features = ["io-util", "macros", "rt-multi-thread", "time"], default-features = false }
