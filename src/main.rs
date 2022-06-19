@@ -9,7 +9,7 @@ mod routes;
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     let env = env::init().await?;
-    let hmac = auth::hmac(&env)?;
+    let key = auth::key(&env);
 
     let db = PgPoolOptions::new().connect(&env.database_url).await?;
     sqlx::migrate!().run(&db).await?;
@@ -19,11 +19,13 @@ async fn main() -> anyhow::Result<()> {
     let router = axum::Router::new()
         .route("/", get(routes::oiblz))
         .route("/session/ask/:who", post(routes::post_session_ask))
+        .route("/session/cancel", post(routes::post_session_cancel))
         .route("/session/state", get(routes::get_session_state))
         .route("/session/confirm/:id", post(routes::post_session_confirm))
         .route("/session/convert", post(routes::post_session_convert))
         .route("/session/confirmable", get(routes::get_session_confirmable))
-        .layer(axum::Extension(hmac))
+        .route("/session/drop", post(routes::post_session_drop))
+        .layer(axum::Extension(key))
         .layer(axum::Extension(db));
 
     axum::Server::bind(&env.rest_socket)
