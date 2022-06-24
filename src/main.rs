@@ -22,6 +22,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/session/cancel", post(routes::post_session_cancel))
         .route("/session/state", get(routes::get_session_state))
         .route("/session/confirm/:id", post(routes::post_session_confirm))
+        .route("/session/refuse/:id", post(routes::post_session_refuse))
         .route("/session/convert", post(routes::post_session_convert))
         .route("/session/confirmable", get(routes::get_session_confirmable))
         .route("/session/drop", post(routes::post_session_drop))

@@ -5,6 +5,8 @@ CREATE TABLE sessions (
 	who person NOT NULL,
 	confirmed_at TIMESTAMPTZ,
 	converted_at TIMESTAMPTZ,
+	refused_at TIMESTAMPTZ,
 	created_at TIMESTAMPTZ NOT NULL,
-	CHECK (confirmed_at IS NOT NULL OR converted_at IS NULL)
+	CHECK (confirmed_at IS NOT NULL OR converted_at IS NULL),
+	CHECK (num_nulls(confirmed_at, refused_at) > 0)
 );

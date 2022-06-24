@@ -36,9 +36,28 @@ pub async fn confirm_session(db: &PgPool, id: i32) -> sqlx::Result<()> {
         "
 		UPDATE sessions
 		SET confirmed_at = NOW()
-		WHERE id = $1 AND confirmed_at IS NULL
+		WHERE id = $1
+            AND confirmed_at IS NULL
+            AND refused_at IS NULL
 		RETURNING id
 		",
+        id
+    )
+    .fetch_one(db)
+    .await
+    .map(|_| ())
+}
+
+pub async fn refuse_session(db: &PgPool, id: i32) -> sqlx::Result<()> {
+    sqlx::query_scalar!(
+        "
+        UPDATE sessions
+        SET refused_at = NOW()
+        WHERE id = $1
+            AND confirmed_at IS NULL
+            AND refused_at IS NULL
+        RETURNING id
+        ",
         id
     )
     .fetch_one(db)
@@ -51,7 +70,9 @@ pub async fn convert_session(db: &PgPool, id: i32) -> sqlx::Result<()> {
         "
 		UPDATE sessions
 		SET converted_at = NOW()
-		WHERE id = $1 AND confirmed_at IS NOT NULL AND converted_at IS NULL
+		WHERE id = $1
+            AND confirmed_at IS NOT NULL
+            AND converted_at IS NULL
 		RETURNING id
 		",
         id
@@ -66,6 +87,7 @@ pub enum SessionState {
     Confirmable,
     Convertable,
     Converted,
+    Refused,
     Stale,
 }
 
@@ -76,6 +98,7 @@ pub async fn session_state(db: &PgPool, id: i32) -> sqlx::Result<Option<(Person,
             s1.who as "who: Person",
             s1.confirmed_at,
             s1.converted_at,
+            s1.refused_at,
             s2.id IS NOT NULL as "stale!"
 		FROM sessions s1
         LEFT JOIN sessions s2 ON s2.who = s1.who and s2.created_at > s1.created_at
@@ -89,7 +112,9 @@ pub async fn session_state(db: &PgPool, id: i32) -> sqlx::Result<Option<(Person,
         r.map(|r| {
             (
                 r.who,
-                if r.stale {
+                if r.refused_at.is_some() {
+                    SessionState::Refused
+                } else if r.stale {
                     SessionState::Stale
                 } else if r.confirmed_at.is_none() {
                     SessionState::Confirmable
@@ -106,10 +131,13 @@ pub async fn session_state(db: &PgPool, id: i32) -> sqlx::Result<Option<(Person,
 pub async fn confirmable_session(db: &PgPool, by: Person) -> sqlx::Result<Option<i32>> {
     sqlx::query_scalar!(
         r#"
-        SELECT id
-        FROM sessions
-        WHERE confirmed_at IS NULL AND who = $1
-        ORDER BY created_at DESC
+        SELECT s1.id
+        FROM sessions s1
+        LEFT JOIN sessions s2 ON s2.who = s1.who and s2.created_at > s1.created_at
+        WHERE s1.who = $1
+            AND s1.confirmed_at IS NULL
+            AND s1.refused_at IS NULL
+            AND s2.id IS NULL
         LIMIT 1
         "#,
         !by as Person

@@ -49,6 +49,19 @@ pub async fn post_session_confirm(db: Db, s: Session, Path(id): Path<i32>) -> St
     }
 }
 
+pub async fn post_session_refuse(db: Db, s: Session, Path(id): Path<i32>) -> StatusCode {
+    match crate::queries::session_state(&db, id).await {
+        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
+        Ok(Some((who, SessionState::Confirmable))) if who != s.who => {}
+        _ => return StatusCode::BAD_REQUEST,
+    };
+
+    match crate::queries::refuse_session(&db, id).await {
+        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
+        Ok(_) => StatusCode::OK,
+    }
+}
+
 pub async fn post_session_convert(
     db: Db,
     cookies: PrivateCookieJar,
