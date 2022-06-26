@@ -1,5 +1,5 @@
 use super::{Person, Split};
-use sqlx::{postgres::types::PgMoney, PgPool};
+use sqlx::{postgres::types::PgMoney, Executor, Postgres};
 
 pub struct Expense {
     pub creator: Person,
@@ -12,7 +12,7 @@ pub struct Expense {
     pub created_at: time::OffsetDateTime,
 }
 
-pub async fn all(db: &PgPool) -> sqlx::Result<Vec<Expense>> {
+pub async fn all(db: impl Executor<'_, Database = Postgres>) -> sqlx::Result<Vec<Expense>> {
     sqlx::query_as!(
         Expense,
         r#"
@@ -32,7 +32,11 @@ pub async fn all(db: &PgPool) -> sqlx::Result<Vec<Expense>> {
     .await
 }
 
-pub async fn resolvable(db: &PgPool, id: i32, by: Person) -> sqlx::Result<bool> {
+pub async fn resolvable(
+    db: impl Executor<'_, Database = Postgres>,
+    id: i32,
+    by: Person,
+) -> sqlx::Result<bool> {
     sqlx::query_scalar!(
         r#"
         SELECT EXISTS (
@@ -49,7 +53,7 @@ pub async fn resolvable(db: &PgPool, id: i32, by: Person) -> sqlx::Result<bool> 
 }
 
 pub async fn submit(
-    db: &PgPool,
+    db: impl Executor<'_, Database = Postgres>,
     creator: Person,
     payer: Person,
     split: Split,
@@ -72,7 +76,11 @@ pub async fn submit(
     .await
 }
 
-pub async fn confirm(db: &PgPool, id: i32, by: Person) -> sqlx::Result<()> {
+pub async fn confirm(
+    db: impl Executor<'_, Database = Postgres>,
+    id: i32,
+    by: Person,
+) -> sqlx::Result<()> {
     sqlx::query_scalar!(
         "
         UPDATE expenses
@@ -91,7 +99,11 @@ pub async fn confirm(db: &PgPool, id: i32, by: Person) -> sqlx::Result<()> {
     .map(|_| ())
 }
 
-pub async fn refuse(db: &PgPool, id: i32, by: Person) -> sqlx::Result<()> {
+pub async fn refuse(
+    db: impl Executor<'_, Database = Postgres>,
+    id: i32,
+    by: Person,
+) -> sqlx::Result<()> {
     sqlx::query_scalar!(
         "
         UPDATE expenses

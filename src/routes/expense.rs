@@ -4,7 +4,9 @@ use crate::{
     queries::{Person, Split},
 };
 use axum::{extract::Path, http::StatusCode, Json};
+use futures::TryFutureExt;
 use serde::{Deserialize, Serialize};
+use std::ops::Deref;
 
 #[derive(Serialize)]
 pub struct ListResponse {
@@ -19,7 +21,7 @@ pub struct ListResponse {
 }
 
 pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, StatusCode> {
-    match crate::queries::expense::all(&db).await {
+    match crate::queries::expense::all(db.deref()).await {
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
         Ok(v) => Ok(Json(
             v.into_iter()
@@ -57,34 +59,42 @@ pub async fn submit(db: Db, s: Session, r: Json<SubmitRequest>) -> StatusCode {
         _ => return StatusCode::BAD_REQUEST,
     };
 
-    match crate::queries::expense::submit(&db, s.who, r.payer, r.split, r.paid, owed).await {
+    match crate::queries::expense::submit(db.deref(), s.who, r.payer, r.split, r.paid, owed).await {
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
         Ok(_) => StatusCode::OK,
     }
 }
 
 pub async fn confirm(db: Db, s: Session, id: Path<i32>) -> StatusCode {
-    match crate::queries::expense::resolvable(&db, *id, s.who).await {
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
-        Ok(false) => return StatusCode::BAD_REQUEST,
-        Ok(true) => {}
-    };
+    let res = db.begin().and_then(|mut transaction| async move {
+        if !crate::queries::expense::resolvable(&mut transaction, *id, s.who).await? {
+            return Ok(None);
+        };
 
-    match crate::queries::expense::confirm(&db, *id, s.who).await {
+        crate::queries::expense::confirm(&mut transaction, *id, s.who).await?;
+        transaction.commit().map_ok(Some).await
+    });
+
+    match res.await {
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        Ok(_) => StatusCode::OK,
+        Ok(None) => StatusCode::BAD_REQUEST,
+        Ok(Some(_)) => StatusCode::OK,
     }
 }
 
 pub async fn refuse(db: Db, s: Session, id: Path<i32>) -> StatusCode {
-    match crate::queries::expense::resolvable(&db, *id, s.who).await {
-        Err(_) => return StatusCode::INTERNAL_SERVER_ERROR,
-        Ok(false) => return StatusCode::BAD_REQUEST,
-        Ok(true) => {}
-    };
+    let res = db.begin().and_then(|mut transaction| async move {
+        if !crate::queries::expense::resolvable(&mut transaction, *id, s.who).await? {
+            return Ok(None);
+        };
 
-    match crate::queries::expense::refuse(&db, *id, s.who).await {
+        crate::queries::expense::refuse(&mut transaction, *id, s.who).await?;
+        transaction.commit().map_ok(Some).await
+    });
+
+    match res.await {
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        Ok(_) => StatusCode::OK,
+        Ok(None) => StatusCode::BAD_REQUEST,
+        Ok(Some(_)) => StatusCode::OK,
     }
 }

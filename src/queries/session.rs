@@ -1,7 +1,7 @@
 use super::Person;
-use sqlx::PgPool;
+use sqlx::{Executor, Postgres};
 
-pub async fn ask(db: &PgPool, person: Person) -> sqlx::Result<i32> {
+pub async fn ask(db: impl Executor<'_, Database = Postgres>, person: Person) -> sqlx::Result<i32> {
     sqlx::query_scalar!(
         "
 		INSERT INTO sessions (who, created_at, confirmed_at)
@@ -14,7 +14,7 @@ pub async fn ask(db: &PgPool, person: Person) -> sqlx::Result<i32> {
     .await
 }
 
-pub async fn confirm(db: &PgPool, id: i32) -> sqlx::Result<()> {
+pub async fn confirm(db: impl Executor<'_, Database = Postgres>, id: i32) -> sqlx::Result<()> {
     sqlx::query_scalar!(
         "
 		UPDATE sessions
@@ -31,7 +31,7 @@ pub async fn confirm(db: &PgPool, id: i32) -> sqlx::Result<()> {
     .map(|_| ())
 }
 
-pub async fn refuse(db: &PgPool, id: i32) -> sqlx::Result<()> {
+pub async fn refuse(db: impl Executor<'_, Database = Postgres>, id: i32) -> sqlx::Result<()> {
     sqlx::query_scalar!(
         "
         UPDATE sessions
@@ -48,7 +48,7 @@ pub async fn refuse(db: &PgPool, id: i32) -> sqlx::Result<()> {
     .map(|_| ())
 }
 
-pub async fn convert(db: &PgPool, id: i32) -> sqlx::Result<()> {
+pub async fn convert(db: impl Executor<'_, Database = Postgres>, id: i32) -> sqlx::Result<()> {
     sqlx::query_scalar!(
         "
 		UPDATE sessions
@@ -74,7 +74,10 @@ pub enum SessionState {
     Stale,
 }
 
-pub async fn state(db: &PgPool, id: i32) -> sqlx::Result<Option<(Person, SessionState)>> {
+pub async fn state(
+    db: impl Executor<'_, Database = Postgres>,
+    id: i32,
+) -> sqlx::Result<Option<(Person, SessionState)>> {
     sqlx::query!(
         r#"
 		SELECT
@@ -111,7 +114,10 @@ pub async fn state(db: &PgPool, id: i32) -> sqlx::Result<Option<(Person, Session
     })
 }
 
-pub async fn confirmable(db: &PgPool, by: Person) -> sqlx::Result<Option<i32>> {
+pub async fn confirmable(
+    db: impl Executor<'_, Database = Postgres>,
+    by: Person,
+) -> sqlx::Result<Option<i32>> {
     sqlx::query_scalar!(
         r#"
         SELECT s1.id
