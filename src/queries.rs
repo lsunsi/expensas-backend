@@ -20,17 +20,6 @@ pub enum Person {
     Lu,
 }
 
-impl std::ops::Not for Person {
-    type Output = Self;
-
-    fn not(self) -> Self::Output {
-        match self {
-            Person::Ale => Person::Lu,
-            Person::Lu => Person::Ale,
-        }
-    }
-}
-
 #[derive(Debug, Clone, Copy, PartialEq, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "split")]
 pub enum Split {

@@ -117,13 +117,13 @@ pub async fn confirmable(db: &PgPool, by: Person) -> sqlx::Result<Option<i32>> {
         SELECT s1.id
         FROM sessions s1
         LEFT JOIN sessions s2 ON s2.who = s1.who and s2.created_at > s1.created_at
-        WHERE s1.who = $1
+        WHERE s1.who != $1
             AND s1.confirmed_at IS NULL
             AND s1.refused_at IS NULL
             AND s2.id IS NULL
         LIMIT 1
         "#,
-        !by as Person
+        by as Person
     )
     .fetch_optional(db)
     .await
