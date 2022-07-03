@@ -1,5 +1,6 @@
 mod expense;
 mod session;
+mod summary;
 
 use axum::{
     http::{Request, Response},
@@ -25,6 +26,7 @@ pub async fn init(db: sqlx::PgPool, env: crate::env::Env) -> anyhow::Result<()> 
         .route("/expense/submit", post(expense::submit))
         .route("/expense/confirm/:id", post(expense::confirm))
         .route("/expense/refuse/:id", post(expense::refuse))
+        .route("/summary", get(summary::get))
         .layer(axum::Extension(crate::auth::key(&env)))
         .layer(axum::Extension(db))
         .layer(
