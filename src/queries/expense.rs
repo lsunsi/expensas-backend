@@ -2,6 +2,7 @@ use super::{Person, Split};
 use sqlx::{postgres::types::PgMoney, Executor, Postgres};
 
 pub struct Expense {
+    pub id: i32,
     pub creator: Person,
     pub payer: Person,
     pub split: Split,
@@ -17,6 +18,7 @@ pub async fn all(db: impl Executor<'_, Database = Postgres>) -> sqlx::Result<Vec
         Expense,
         r#"
         SELECT
+            id,
             creator as "creator: Person",
             payer as "payer: Person",
             split as "split: Split",
@@ -26,6 +28,7 @@ pub async fn all(db: impl Executor<'_, Database = Postgres>) -> sqlx::Result<Vec
             refused_at,
             created_at
         FROM expenses
+        ORDER BY created_at DESC
         "#
     )
     .fetch_all(db)

@@ -7,17 +7,19 @@ use axum::{extract::Path, http::StatusCode, Json};
 use futures::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+use time::Format;
 
 #[derive(Serialize)]
 pub struct ListResponse {
+    id: i32,
     creator: Person,
     payer: Person,
     split: Split,
     paid: i64,
     owed: i64,
-    confirmed_at: Option<time::OffsetDateTime>,
-    refused_at: Option<time::OffsetDateTime>,
-    created_at: time::OffsetDateTime,
+    confirmed_at: Option<String>,
+    refused_at: Option<String>,
+    created_at: String,
 }
 
 pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, StatusCode> {
@@ -26,14 +28,15 @@ pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, Status
         Ok(v) => Ok(Json(
             v.into_iter()
                 .map(|i| ListResponse {
+                    id: i.id,
                     creator: i.creator,
                     payer: i.payer,
                     split: i.split,
                     paid: i.paid.0,
                     owed: i.owed.0,
-                    confirmed_at: i.confirmed_at,
-                    refused_at: i.refused_at,
-                    created_at: i.created_at,
+                    confirmed_at: i.confirmed_at.map(|t| t.format(Format::Rfc3339)),
+                    refused_at: i.refused_at.map(|t| t.format(Format::Rfc3339)),
+                    created_at: i.created_at.format(Format::Rfc3339),
                 })
                 .collect(),
         )),
