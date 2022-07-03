@@ -1,11 +1,15 @@
-use super::{Person, Split};
+use super::{Label, Person, Split};
 use sqlx::{postgres::types::PgMoney, Executor, Postgres};
+use time::Date;
 
 pub struct Expense {
     pub id: i32,
     pub creator: Person,
     pub payer: Person,
     pub split: Split,
+    pub label: Label,
+    pub detail: Option<String>,
+    pub date: time::Date,
     pub paid: PgMoney,
     pub owed: PgMoney,
     pub confirmed_at: Option<time::OffsetDateTime>,
@@ -22,6 +26,9 @@ pub async fn all(db: impl Executor<'_, Database = Postgres>) -> sqlx::Result<Vec
             creator as "creator: Person",
             payer as "payer: Person",
             split as "split: Split",
+            label as "label: Label",
+            detail,
+            date,
             paid,
             owed,
             confirmed_at,
@@ -60,18 +67,24 @@ pub async fn submit(
     creator: Person,
     payer: Person,
     split: Split,
+    label: Label,
+    detail: Option<&str>,
+    date: Date,
     paid: i64,
     owed: i64,
 ) -> sqlx::Result<i32> {
     sqlx::query_scalar!(
         "
-        INSERT INTO expenses (creator, payer, split, paid, owed, created_at)
-        VALUES ($1, $2, $3, $4, $5, NOW())
+        INSERT INTO expenses (creator, payer, split, label, detail, date, paid, owed, created_at)
+        VALUES ($1, $2, $3, $4, $5, $6, $7, $8, NOW())
         RETURNING id
         ",
         creator as Person,
         payer as Person,
         split as Split,
+        label as Label,
+        detail,
+        date,
         PgMoney(paid),
         PgMoney(owed)
     )

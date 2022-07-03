@@ -1,7 +1,7 @@
 use super::Db;
 use crate::{
     auth::Session,
-    queries::{Person, Split},
+    queries::{Label, Person, Split},
 };
 use axum::{extract::Path, http::StatusCode, Json};
 use futures::TryFutureExt;
@@ -15,6 +15,9 @@ pub struct ListResponse {
     creator: Person,
     payer: Person,
     split: Split,
+    label: Label,
+    detail: Option<String>,
+    date: String,
     paid: i64,
     owed: i64,
     confirmed_at: Option<String>,
@@ -32,6 +35,9 @@ pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, Status
                     creator: i.creator,
                     payer: i.payer,
                     split: i.split,
+                    label: i.label,
+                    detail: i.detail,
+                    date: i.date.format("%Y-%m-%d"),
                     paid: i.paid.0,
                     owed: i.owed.0,
                     confirmed_at: i.confirmed_at.map(|t| t.format(Format::Rfc3339)),
@@ -47,11 +53,19 @@ pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, Status
 pub struct SubmitRequest {
     payer: Person,
     split: Split,
+    label: Label,
+    detail: Option<String>,
+    date: String,
     paid: i64,
     owed: Option<i64>,
 }
 
 pub async fn submit(db: Db, s: Session, r: Json<SubmitRequest>) -> StatusCode {
+    let date = match time::Date::parse(&r.date, "%F") {
+        Err(_) => return StatusCode::BAD_REQUEST,
+        Ok(data) => data,
+    };
+
     let owed = match (r.split, r.owed) {
         (Split::Arbitrary, Some(owed)) if owed <= r.paid => owed,
         (Split::Proportional, None) => match r.payer {
@@ -62,7 +76,19 @@ pub async fn submit(db: Db, s: Session, r: Json<SubmitRequest>) -> StatusCode {
         _ => return StatusCode::BAD_REQUEST,
     };
 
-    match crate::queries::expense::submit(db.deref(), s.who, r.payer, r.split, r.paid, owed).await {
+    match crate::queries::expense::submit(
+        db.deref(),
+        s.who,
+        r.payer,
+        r.split,
+        r.label,
+        r.detail.as_deref(),
+        date,
+        r.paid,
+        owed,
+    )
+    .await
+    {
         Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
         Ok(_) => StatusCode::OK,
     }

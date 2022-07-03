@@ -27,3 +27,18 @@ pub enum Split {
     Arbitrary,
     Evenly,
 }
+
+#[derive(Debug, Clone, Copy, PartialEq, Type, Serialize, Deserialize)]
+#[sqlx(type_name = "label")]
+pub enum Label {
+    Market,
+    Delivery,
+    Transport,
+    Leisure,
+    Water,
+    Internet,
+    Gas,
+    Housing,
+    Electricity,
+    Furnitance,
+}
