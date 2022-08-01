@@ -1,0 +1,19 @@
+[Unit]
+Description=Expensas backend
+
+Requires=network-online.target postgresql.service
+After=network-online.target postgresql.service
+
+[Service]
+Type=simple
+ExecStart=/usr/bin/expensas
+
+User=expensas
+Group=expensas
+
+Environment=REST_SOCKET=127.0.0.1:8001
+Environment=DATABASE_URL=postgres:///expensas
+Environment=SECRET=0000000000000000000000000000000000000000000000000000000000000000
+
+[Install]
+WantedBy=multi-user.target
