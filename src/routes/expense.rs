@@ -7,7 +7,7 @@ use axum::{extract::Path, http::StatusCode, Json};
 use futures::TryFutureExt;
 use serde::{Deserialize, Serialize};
 use std::ops::Deref;
-use time::Format;
+use time::format_description::well_known::{Iso8601, Rfc3339};
 
 #[derive(Serialize)]
 pub struct ListResponse {
@@ -28,24 +28,50 @@ pub struct ListResponse {
 pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, StatusCode> {
     match crate::queries::expense::all(db.deref()).await {
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-        Ok(v) => Ok(Json(
-            v.into_iter()
-                .map(|i| ListResponse {
+        Ok(v) => {
+            let mut list = vec![];
+
+            for i in v {
+                let date = i
+                    .date
+                    .format(&Iso8601::DEFAULT)
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                let confirmed_at = i
+                    .confirmed_at
+                    .map(|t| t.format(&Rfc3339))
+                    .transpose()
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                let refused_at = i
+                    .refused_at
+                    .map(|t| t.format(&Rfc3339))
+                    .transpose()
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                let created_at = i
+                    .created_at
+                    .format(&Rfc3339)
+                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+                list.push(ListResponse {
                     id: i.id,
                     creator: i.creator,
                     payer: i.payer,
                     split: i.split,
                     label: i.label,
                     detail: i.detail,
-                    date: i.date.format("%Y-%m-%d"),
+                    date,
                     paid: i.paid.0,
                     owed: i.owed.0,
-                    confirmed_at: i.confirmed_at.map(|t| t.format(Format::Rfc3339)),
-                    refused_at: i.refused_at.map(|t| t.format(Format::Rfc3339)),
-                    created_at: i.created_at.format(Format::Rfc3339),
-                })
-                .collect(),
-        )),
+                    confirmed_at,
+                    refused_at,
+                    created_at,
+                });
+            }
+
+            Ok(Json(list))
+        }
     }
 }
 
@@ -61,7 +87,7 @@ pub struct SubmitRequest {
 }
 
 pub async fn submit(db: Db, s: Session, r: Json<SubmitRequest>) -> StatusCode {
-    let date = match time::Date::parse(&r.date, "%F") {
+    let date = match time::Date::parse(&r.date, &Iso8601::DEFAULT) {
         Err(_) => return StatusCode::BAD_REQUEST,
         Ok(data) => data,
     };

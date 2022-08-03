@@ -10,8 +10,8 @@ axum-extra = { version = "0.3.4", features = ["cookie-private"], default-feature
 base64 = { version = "0.13.0", default-features = false }
 futures = { version = "0.3.21", default-features = false }
 serde = { version = "1.0.137", features = ["derive"], default-features = false }
-sqlx = { version = "0.5.13", features = ["macros", "migrate", "postgres", "runtime-tokio-rustls", "time"], default-features = false }
-time = { version = "0.2.27", features = ["serde"], default-features = false }
+sqlx = { version = "0.6.1", features = ["macros", "migrate", "postgres", "runtime-tokio-rustls", "time"], default-features = false }
+time = { version = "0.3.11", features = ["serde", "parsing", "formatting"], default-features = false }
 tokio = { version = "1.19.2", features = ["io-util", "macros", "rt-multi-thread", "time"], default-features = false }
 tower-http = { version = "0.3.4", features = ["trace"], default-features = false }
 tracing = { version = "0.1.35", default-features = false }
