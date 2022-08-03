@@ -8,6 +8,7 @@ use axum_extra::extract::{
     cookie::{Cookie, Key, SameSite},
     PrivateCookieJar,
 };
+use time::{Duration, OffsetDateTime};
 
 pub fn key(env: &Env) -> Key {
     axum_extra::extract::cookie::Key::from(env.secret.as_bytes())
@@ -82,8 +83,11 @@ impl From<Session> for Cookie<'static> {
         };
 
         let mut cookie = Cookie::new(COOKIE_SESSION, format!("{id}/{who}"));
+        cookie.set_expires(OffsetDateTime::now_utc() + Duration::weeks(12));
         cookie.set_same_site(SameSite::Strict);
         cookie.set_http_only(true);
+        cookie.set_secure(true);
+
         cookie.set_path("/");
         cookie
     }
