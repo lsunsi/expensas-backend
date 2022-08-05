@@ -32,10 +32,12 @@ pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, Status
             let mut list = vec![];
 
             for i in v {
-                let date = i
-                    .date
-                    .format(&Iso8601::DEFAULT)
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+                let date = format!(
+                    "{:0>4}-{:0>2}-{:0>2}",
+                    i.date.year(),
+                    i.date.month() as u8,
+                    i.date.day()
+                );
 
                 let confirmed_at = i
                     .confirmed_at
@@ -61,12 +63,12 @@ pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, Status
                     split: i.split,
                     label: i.label,
                     detail: i.detail,
-                    date,
                     paid: i.paid.0,
                     owed: i.owed.0,
                     confirmed_at,
                     refused_at,
                     created_at,
+                    date,
                 });
             }
 
