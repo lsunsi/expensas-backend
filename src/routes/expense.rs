@@ -12,7 +12,7 @@ use time::format_description::well_known::{Iso8601, Rfc3339};
 #[derive(Serialize)]
 pub struct ListResponse {
     id: i32,
-    creator: Person,
+    yours: bool,
     payer: Person,
     split: Split,
     label: Label,
@@ -25,7 +25,7 @@ pub struct ListResponse {
     created_at: String,
 }
 
-pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, StatusCode> {
+pub async fn list(db: Db, s: Session) -> Result<Json<Vec<ListResponse>>, StatusCode> {
     match crate::queries::expense::all(db.deref()).await {
         Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
         Ok(v) => {
@@ -58,7 +58,7 @@ pub async fn list(db: Db, _s: Session) -> Result<Json<Vec<ListResponse>>, Status
 
                 list.push(ListResponse {
                     id: i.id,
-                    creator: i.creator,
+                    yours: i.creator == s.who,
                     payer: i.payer,
                     split: i.split,
                     label: i.label,
