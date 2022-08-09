@@ -64,7 +64,11 @@ pub async fn list(db: Db, s: Session) -> Result<Json<Vec<ListResponse>>, StatusC
                     label: i.label,
                     detail: i.detail,
                     paid: i.paid.0,
-                    owed: i.owed.0,
+                    owed: if i.payer == s.who {
+                        i.paid.0 - i.owed.0
+                    } else {
+                        i.owed.0
+                    },
                     confirmed_at,
                     refused_at,
                     created_at,
