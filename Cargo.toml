@@ -9,6 +9,7 @@ axum = { version = "0.5.7", features = ["http1", "json"], default-features = fal
 axum-extra = { version = "0.3.4", features = ["cookie-private"], default-features = false }
 base64 = { version = "0.13.0", default-features = false }
 futures = { version = "0.3.21", default-features = false }
+itertools = { version = "0.10.3", default-features = false }
 serde = { version = "1.0.137", features = ["derive"], default-features = false }
 sqlx = { version = "0.6.1", features = ["macros", "migrate", "postgres", "runtime-tokio-rustls", "time"], default-features = false }
 time = { version = "0.3.11", features = ["serde", "parsing", "formatting"], default-features = false }

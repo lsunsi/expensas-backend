@@ -35,7 +35,6 @@ pub async fn all(db: impl Executor<'_, Database = Postgres>) -> sqlx::Result<Vec
             refused_at,
             created_at
         FROM expenses
-        ORDER BY date DESC, created_at DESC
         "#
     )
     .fetch_all(db)
@@ -62,6 +61,7 @@ pub async fn resolvable(
     .await
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn submit(
     db: impl Executor<'_, Database = Postgres>,
     creator: Person,

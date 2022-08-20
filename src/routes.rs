@@ -1,4 +1,5 @@
 mod expense;
+mod list;
 mod session;
 mod summary;
 mod transfer;
@@ -23,14 +24,14 @@ pub async fn init(db: sqlx::PgPool, env: crate::env::Env) -> anyhow::Result<()> 
         .route("/session/convert", post(session::convert))
         .route("/session/confirmable", get(session::confirmable))
         .route("/session/drop", post(session::drop))
-        .route("/expense/list", get(expense::list))
         .route("/expense/submit", post(expense::submit))
         .route("/expense/confirm/:id", post(expense::confirm))
         .route("/expense/refuse/:id", post(expense::refuse))
         .route("/transfer/submit", post(transfer::submit))
-        .route("/expense/confirm/:id", post(transfer::confirm))
-        .route("/expense/refuse/:id", post(transfer::refuse))
+        .route("/transfer/confirm/:id", post(transfer::confirm))
+        .route("/transfer/refuse/:id", post(transfer::refuse))
         .route("/summary", get(summary::get))
+        .route("/list", get(list::get))
         .layer(axum::Extension(crate::auth::key(&env)))
         .layer(axum::Extension(db))
         .layer(

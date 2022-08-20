@@ -5,81 +5,9 @@ use crate::{
 };
 use axum::{extract::Path, http::StatusCode, Json};
 use futures::TryFutureExt;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::ops::Deref;
-use time::format_description::well_known::{Iso8601, Rfc3339};
-
-#[derive(Serialize)]
-pub struct ListResponse {
-    id: i32,
-    yours: bool,
-    payer: Person,
-    split: Split,
-    label: Label,
-    detail: Option<String>,
-    date: String,
-    paid: i64,
-    owed: i64,
-    confirmed_at: Option<String>,
-    refused_at: Option<String>,
-    created_at: String,
-}
-
-pub async fn list(db: Db, s: Session) -> Result<Json<Vec<ListResponse>>, StatusCode> {
-    match crate::queries::expense::all(db.deref()).await {
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-        Ok(v) => {
-            let mut list = vec![];
-
-            for i in v {
-                let date = format!(
-                    "{:0>4}-{:0>2}-{:0>2}",
-                    i.date.year(),
-                    i.date.month() as u8,
-                    i.date.day()
-                );
-
-                let confirmed_at = i
-                    .confirmed_at
-                    .map(|t| t.format(&Rfc3339))
-                    .transpose()
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-                let refused_at = i
-                    .refused_at
-                    .map(|t| t.format(&Rfc3339))
-                    .transpose()
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-                let created_at = i
-                    .created_at
-                    .format(&Rfc3339)
-                    .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
-
-                list.push(ListResponse {
-                    id: i.id,
-                    yours: i.creator == s.who,
-                    payer: i.payer,
-                    split: i.split,
-                    label: i.label,
-                    detail: i.detail,
-                    paid: i.paid.0,
-                    owed: if i.payer == s.who {
-                        i.paid.0 - i.owed.0
-                    } else {
-                        i.owed.0
-                    },
-                    confirmed_at,
-                    refused_at,
-                    created_at,
-                    date,
-                });
-            }
-
-            Ok(Json(list))
-        }
-    }
-}
+use time::format_description::well_known::Iso8601;
 
 #[derive(Deserialize)]
 pub struct SubmitRequest {

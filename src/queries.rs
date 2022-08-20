@@ -15,14 +15,14 @@ pub async fn init(env: &crate::env::Env) -> anyhow::Result<sqlx::PgPool> {
     Ok(pool)
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Type, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "person")]
 pub enum Person {
     Ale,
     Lu,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Type, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "split")]
 pub enum Split {
     Proportional,
@@ -30,7 +30,7 @@ pub enum Split {
     Evenly,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Type, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "label")]
 pub enum Label {
     Market,
