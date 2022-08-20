@@ -1,5 +1,6 @@
 pub mod expense;
 pub mod session;
+pub mod transfer;
 
 use serde::{Deserialize, Serialize};
 use sqlx::Type;
