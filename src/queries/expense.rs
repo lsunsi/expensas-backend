@@ -35,7 +35,7 @@ pub async fn all(db: impl Executor<'_, Database = Postgres>) -> sqlx::Result<Vec
             refused_at,
             created_at
         FROM expenses
-        ORDER BY created_at DESC
+        ORDER BY date DESC, created_at DESC
         "#
     )
     .fetch_all(db)
