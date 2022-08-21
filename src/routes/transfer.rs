@@ -24,8 +24,11 @@ pub async fn submit(db: Db, s: Session, r: Json<SubmitRequest>) -> StatusCode {
     };
 
     match crate::queries::transfer::submit(db.deref(), s.who, receiver, date, r.amount).await {
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
         Ok(_) => StatusCode::OK,
+        Err(e) => {
+            tracing::error!("{e:?}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
     }
 }
 
@@ -40,9 +43,12 @@ pub async fn confirm(db: Db, s: Session, id: Path<i32>) -> StatusCode {
     });
 
     match res.await {
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        Ok(None) => StatusCode::BAD_REQUEST,
         Ok(Some(_)) => StatusCode::OK,
+        Ok(None) => StatusCode::BAD_REQUEST,
+        Err(e) => {
+            tracing::error!("{e:?}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
     }
 }
 
@@ -57,8 +63,11 @@ pub async fn refuse(db: Db, s: Session, id: Path<i32>) -> StatusCode {
     });
 
     match res.await {
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        Ok(None) => StatusCode::BAD_REQUEST,
         Ok(Some(_)) => StatusCode::OK,
+        Ok(None) => StatusCode::BAD_REQUEST,
+        Err(e) => {
+            tracing::error!("{e:?}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
     }
 }

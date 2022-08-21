@@ -22,7 +22,10 @@ pub async fn get(db: Db, s: Session) -> Result<Json<GetResponse>, StatusCode> {
             Ok((owed, resolvable))
         })
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            tracing::error!("{e:?}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     Ok(Json(GetResponse {
         me: s.who,

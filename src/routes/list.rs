@@ -63,7 +63,10 @@ pub async fn get(db: Db, s: Session) -> Result<Json<Response>, StatusCode> {
             ))
         })
         .await
-        .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+        .map_err(|e| {
+            tracing::error!("{e:?}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        })?;
 
     let expenses = expenses.into_iter().map(|e| {
         let spent = if e.payer == s.who {

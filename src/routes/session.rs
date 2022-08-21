@@ -14,8 +14,11 @@ pub async fn ask(
     Path(who): Path<Person>,
 ) -> Result<PrivateCookieJar, StatusCode> {
     match crate::queries::session::ask(db.deref(), who).await {
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
         Ok(id) => Ok(cookies.add(SessionAsk(id).into())),
+        Err(e) => {
+            tracing::error!("{e:?}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
     }
 }
 
@@ -28,8 +31,11 @@ pub async fn state(
     SessionAsk(id): SessionAsk,
 ) -> Result<Json<Option<SessionState>>, StatusCode> {
     match crate::queries::session::state(db.deref(), id).await {
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
         Ok(outcome) => Ok(Json(outcome.map(|o| o.1))),
+        Err(e) => {
+            tracing::error!("{e:?}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
     }
 }
 
@@ -45,9 +51,12 @@ pub async fn confirm(db: Db, s: Session, Path(id): Path<i32>) -> StatusCode {
     });
 
     match res.await {
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        Ok(None) => StatusCode::BAD_REQUEST,
         Ok(Some(())) => StatusCode::OK,
+        Ok(None) => StatusCode::BAD_REQUEST,
+        Err(e) => {
+            tracing::error!("{e:?}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
     }
 }
 
@@ -63,9 +72,12 @@ pub async fn refuse(db: Db, s: Session, Path(id): Path<i32>) -> StatusCode {
     });
 
     match res.await {
-        Err(_) => StatusCode::INTERNAL_SERVER_ERROR,
-        Ok(None) => StatusCode::BAD_REQUEST,
         Ok(Some(())) => StatusCode::OK,
+        Ok(None) => StatusCode::BAD_REQUEST,
+        Err(e) => {
+            tracing::error!("{e:?}");
+            StatusCode::INTERNAL_SERVER_ERROR
+        }
     }
 }
 
@@ -85,16 +97,22 @@ pub async fn convert(
     });
 
     match res.await {
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
-        Ok(None) => Err(StatusCode::BAD_REQUEST),
         Ok(Some(who)) => Ok(cookies.remove(ask.into()).add(Session { who, id }.into())),
+        Ok(None) => Err(StatusCode::BAD_REQUEST),
+        Err(e) => {
+            tracing::error!("{e:?}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
     }
 }
 
 pub async fn confirmable(db: Db, s: Session) -> Result<Json<Option<i32>>, StatusCode> {
     match crate::queries::session::confirmable(db.deref(), s.who).await {
-        Err(_) => Err(StatusCode::INTERNAL_SERVER_ERROR),
         Ok(outcome) => Ok(Json(outcome)),
+        Err(e) => {
+            tracing::error!("{e:?}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
     }
 }
 
