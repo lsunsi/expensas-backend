@@ -43,7 +43,8 @@ enum Item {
 #[derive(Serialize)]
 struct Month {
     n: u8,
-    spent: u64,
+    spent_me: u64,
+    spent_we: u64,
     items: Vec<Item>,
 }
 
@@ -79,6 +80,7 @@ pub async fn get(db: Db, s: Session) -> Result<Json<Response>, StatusCode> {
             e.date,
             e.created_at,
             spent,
+            e.paid.0,
             e.confirmed_at.is_none() && e.refused_at.is_none(),
             e.confirmed_at.is_some(),
             Item::Expense(Expense {
@@ -101,6 +103,7 @@ pub async fn get(db: Db, s: Session) -> Result<Json<Response>, StatusCode> {
         (
             t.date,
             t.created_at,
+            0,
             0,
             t.confirmed_at.is_none() && t.refused_at.is_none(),
             t.confirmed_at.is_some(),
@@ -126,9 +129,10 @@ pub async fn get(db: Db, s: Session) -> Result<Json<Response>, StatusCode> {
 
     for (month, group) in &groups {
         let mut items = Vec::new();
-        let mut spent = 0;
+        let mut spent_me = 0;
+        let mut spent_we = 0;
 
-        for (_, _, item_spent, pending, confirmed, item) in group {
+        for (_, _, spent, paid, pending, confirmed, item) in group {
             if pending {
                 pendings.push(item);
                 continue;
@@ -137,13 +141,15 @@ pub async fn get(db: Db, s: Session) -> Result<Json<Response>, StatusCode> {
             items.push(item);
 
             if confirmed {
-                spent += item_spent as u64;
+                spent_me += spent as u64;
+                spent_we += paid as u64;
             }
         }
 
         months.push(Month {
             n: month as u8,
-            spent,
+            spent_me,
+            spent_we,
             items,
         })
     }
