@@ -27,6 +27,7 @@ pub async fn init(db: sqlx::PgPool, env: crate::env::Env) -> anyhow::Result<()> 
         .route("/expense/submit", post(expense::submit))
         .route("/expense/confirm/:id", post(expense::confirm))
         .route("/expense/refuse/:id", post(expense::refuse))
+        .route("/expense/splitrecc/:p/:l", get(expense::splitrecc))
         .route("/transfer/submit", post(transfer::submit))
         .route("/transfer/confirm/:id", post(transfer::confirm))
         .route("/transfer/refuse/:id", post(transfer::refuse))

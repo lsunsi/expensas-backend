@@ -96,3 +96,17 @@ pub async fn refuse(db: Db, s: Session, id: Path<i32>) -> StatusCode {
         }
     }
 }
+
+pub async fn splitrecc(
+    db: Db,
+    _s: Session,
+    Path((payer, label)): Path<(Person, Label)>,
+) -> Result<Json<Option<Split>>, StatusCode> {
+    match crate::queries::expense::splitrecc(db.deref(), payer, label).await {
+        Ok(sr) => Ok(Json(sr)),
+        Err(e) => {
+            tracing::error!("{e:?}");
+            Err(StatusCode::INTERNAL_SERVER_ERROR)
+        }
+    }
+}

@@ -137,3 +137,25 @@ pub async fn refuse(
     .await
     .map(|_| ())
 }
+
+pub async fn splitrecc(
+    db: impl Executor<'_, Database = Postgres>,
+    payer: Person,
+    label: Label,
+) -> sqlx::Result<Option<Split>> {
+    sqlx::query_scalar!(
+        r#"
+        SELECT split as "split: Split"
+        FROM expenses
+        WHERE confirmed_at IS NOT NULL
+            AND payer = $1 AND label = $2
+        GROUP BY split
+        ORDER BY COUNT(1) DESC
+        LIMIT 1
+        "#,
+        payer as Person,
+        label as Label
+    )
+    .fetch_optional(db)
+    .await
+}
