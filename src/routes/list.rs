@@ -1,3 +1,5 @@
+use std::collections::HashSet;
+
 use super::Db;
 use crate::{
     auth::Session,
@@ -6,7 +8,7 @@ use crate::{
 use axum::{http::StatusCode, Json};
 use futures::TryFutureExt;
 use itertools::Itertools;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 #[derive(Serialize)]
 struct Expense {
@@ -54,8 +56,13 @@ pub struct Response {
     months: Vec<Month>,
 }
 
-pub async fn get(db: Db, s: Session) -> Result<Json<Response>, StatusCode> {
-    let (expenses, transfers) = db
+#[derive(Deserialize)]
+pub struct Filter {
+    labels: Option<HashSet<Label>>,
+}
+
+pub async fn generate(db: Db, s: Session, f: Json<Filter>) -> Result<Json<Response>, StatusCode> {
+    let (mut expenses, mut transfers) = db
         .begin()
         .and_then(|mut transaction| async move {
             Ok((
@@ -68,6 +75,14 @@ pub async fn get(db: Db, s: Session) -> Result<Json<Response>, StatusCode> {
             tracing::error!("{e:?}");
             StatusCode::INTERNAL_SERVER_ERROR
         })?;
+
+    if let Some(labels) = &f.labels {
+        transfers.clear();
+        expenses = expenses
+            .into_iter()
+            .filter(|e| labels.contains(&e.label))
+            .collect();
+    }
 
     let expenses = expenses.into_iter().map(|e| {
         let spent = if e.payer == s.who {

@@ -30,7 +30,7 @@ pub enum Split {
     Evenly,
 }
 
-#[derive(Debug, Clone, Copy, Type, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "label")]
 pub enum Label {
     Market,

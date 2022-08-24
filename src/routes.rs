@@ -32,7 +32,7 @@ pub async fn init(db: sqlx::PgPool, env: crate::env::Env) -> anyhow::Result<()> 
         .route("/transfer/confirm/:id", post(transfer::confirm))
         .route("/transfer/refuse/:id", post(transfer::refuse))
         .route("/summary", get(summary::get))
-        .route("/list", get(list::get))
+        .route("/list", post(list::generate))
         .layer(axum::Extension(crate::auth::key(&env)))
         .layer(axum::Extension(db))
         .layer(
