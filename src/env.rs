@@ -1,17 +1,20 @@
 use anyhow::Context;
+use axum::http::HeaderValue;
 use std::{error::Error, net::SocketAddr, str::FromStr};
 
 pub struct Env {
-    pub rest_socket: SocketAddr,
+    pub allow_origin: HeaderValue,
     pub database_url: String,
+    pub rest_socket: SocketAddr,
     pub secret: String,
 }
 
 #[cfg(not(debug_assertions))]
 pub async fn init() -> anyhow::Result<Env> {
     Ok(Env {
-        rest_socket: read("REST_SOCKET")?,
+        allow_origin: read("ALLOW_ORIGIN")?,
         database_url: read("DATABASE_URL")?,
+        rest_socket: read("REST_SOCKET")?,
         secret: read("SECRET")?,
     })
 }
@@ -40,8 +43,9 @@ pub async fn init() -> anyhow::Result<Env> {
         .collect::<std::collections::HashMap<&str, &str>>();
 
     Ok(Env {
-        rest_socket: read(&mut map, "REST_SOCKET")?,
+        allow_origin: read(&mut map, "ALLOW_ORIGIN")?,
         database_url: read(&mut map, "DATABASE_URL")?,
+        rest_socket: read(&mut map, "REST_SOCKET")?,
         secret: read(&mut map, "SECRET")?,
     })
 }

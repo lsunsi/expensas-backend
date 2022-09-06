@@ -5,7 +5,7 @@ mod summary;
 mod transfer;
 
 use axum::{
-    http::{Request, Response},
+    http::{Method, Request, Response},
     routing::{get, post},
 };
 use std::time::Duration;
@@ -14,6 +14,11 @@ use tracing::Span;
 type Db = axum::Extension<sqlx::PgPool>;
 
 pub async fn init(db: sqlx::PgPool, env: crate::env::Env) -> anyhow::Result<()> {
+    let cors = tower_http::cors::CorsLayer::new()
+        .allow_methods([Method::GET, Method::POST])
+        .allow_origin(env.allow_origin.clone())
+        .allow_credentials(true);
+
     let router = axum::Router::new()
         .route("/", get(|| async { "oiblz" }))
         .route("/session/ask/:who", post(session::ask))
@@ -35,6 +40,7 @@ pub async fn init(db: sqlx::PgPool, env: crate::env::Env) -> anyhow::Result<()> 
         .route("/list", post(list::generate))
         .layer(axum::Extension(crate::auth::key(&env)))
         .layer(axum::Extension(db))
+        .layer(cors)
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
                 .make_span_with(|req: &Request<_>| {

@@ -11,8 +11,9 @@ ExecStart=/usr/bin/expensas
 User=expensas
 Group=expensas
 
-Environment=REST_SOCKET=127.0.0.1:8001
+Environment=ALLOW_ORIGIN=http://127.0.0.1:5173
 Environment=DATABASE_URL=postgres:///expensas
+Environment=REST_SOCKET=127.0.0.1:8001
 Environment=SECRET=0000000000000000000000000000000000000000000000000000000000000000
 
 [Install]
