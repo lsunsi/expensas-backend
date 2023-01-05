@@ -25,7 +25,8 @@ pub enum Person {
 #[derive(Debug, Clone, Copy, Type, Serialize, Deserialize)]
 #[sqlx(type_name = "split")]
 pub enum Split {
-    Proportional,
+    Proportional2to1,
+    Proportional3to2,
     Arbitrary,
     Evenly,
 }

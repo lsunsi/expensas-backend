@@ -28,9 +28,13 @@ pub async fn submit(db: Db, s: Session, r: Json<SubmitRequest>) -> StatusCode {
 
     let owed = match (r.split, r.owed) {
         (Split::Arbitrary, Some(owed)) if owed <= r.paid => owed,
-        (Split::Proportional, None) => match r.payer {
+        (Split::Proportional2to1, None) => match r.payer {
             Person::Ale => r.paid / 3,
             Person::Lu => r.paid * 2 / 3,
+        },
+        (Split::Proportional3to2, None) => match r.payer {
+            Person::Ale => r.paid * 2 / 5,
+            Person::Lu => r.paid * 3 / 5,
         },
         (Split::Evenly, None) => r.paid / 2,
         _ => return StatusCode::BAD_REQUEST,
