@@ -5,15 +5,24 @@ mod summary;
 mod transfer;
 
 use axum::{
+    extract::FromRef,
     http::{Method, Request, Response},
     routing::{get, post},
 };
 use std::time::Duration;
 use tracing::Span;
 
-type Db = axum::Extension<sqlx::PgPool>;
+type Db = axum::extract::State<sqlx::PgPool>;
+
+#[derive(Clone, FromRef)]
+pub(crate) struct State {
+    key: axum_extra::extract::cookie::Key,
+    db: sqlx::PgPool,
+}
 
 pub async fn init(db: sqlx::PgPool, env: crate::env::Env) -> anyhow::Result<()> {
+    let key = crate::auth::key(&env);
+
     let cors = tower_http::cors::CorsLayer::new()
         .allow_methods([Method::GET, Method::POST])
         .allow_origin(env.allow_origin.clone())
@@ -38,8 +47,6 @@ pub async fn init(db: sqlx::PgPool, env: crate::env::Env) -> anyhow::Result<()> 
         .route("/transfer/refuse/:id", post(transfer::refuse))
         .route("/summary", get(summary::get))
         .route("/list", post(list::generate))
-        .layer(axum::Extension(crate::auth::key(&env)))
-        .layer(axum::Extension(db))
         .layer(cors)
         .layer(
             tower_http::trace::TraceLayer::new_for_http()
@@ -57,7 +64,8 @@ pub async fn init(db: sqlx::PgPool, env: crate::env::Env) -> anyhow::Result<()> 
                     span.record("latency", &tracing::field::debug(latency));
                     tracing::info!("!")
                 }),
-        );
+        )
+        .with_state(State { db, key });
 
     axum::Server::bind(&env.rest_socket)
         .serve(router.into_make_service())

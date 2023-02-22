@@ -1,8 +1,7 @@
 use crate::{env::Env, queries::Person};
 use axum::{
-    body::Body,
-    extract::{FromRequest, RequestParts},
-    http::StatusCode,
+    extract::FromRequestParts,
+    http::{request::Parts, StatusCode},
 };
 use axum_extra::extract::{
     cookie::{Cookie, Key, SameSite},
@@ -17,14 +16,17 @@ pub fn key(env: &Env) -> Key {
 pub struct SessionAsk(pub i32);
 
 #[axum::async_trait]
-impl FromRequest<Body> for SessionAsk {
+impl FromRequestParts<crate::routes::State> for SessionAsk {
     type Rejection = StatusCode;
 
-    async fn from_request(req: &mut RequestParts<Body>) -> Result<Self, Self::Rejection> {
-        let cookies = req
-            .extract::<PrivateCookieJar>()
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &crate::routes::State,
+    ) -> Result<Self, Self::Rejection> {
+        let cookies =
+            PrivateCookieJar::<axum_extra::extract::cookie::Key>::from_request_parts(parts, state)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         let id = cookies
             .get(COOKIE_SESSION_ASK)
@@ -51,14 +53,17 @@ pub struct Session {
 }
 
 #[axum::async_trait]
-impl FromRequest<Body> for Session {
+impl FromRequestParts<crate::routes::State> for Session {
     type Rejection = StatusCode;
 
-    async fn from_request(req: &mut RequestParts<Body>) -> Result<Self, Self::Rejection> {
-        let cookies = req
-            .extract::<PrivateCookieJar>()
-            .await
-            .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+    async fn from_request_parts(
+        parts: &mut Parts,
+        state: &crate::routes::State,
+    ) -> Result<Self, Self::Rejection> {
+        let cookies =
+            PrivateCookieJar::<axum_extra::extract::cookie::Key>::from_request_parts(parts, state)
+                .await
+                .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
 
         let (id, who) = cookies
             .get(COOKIE_SESSION)
