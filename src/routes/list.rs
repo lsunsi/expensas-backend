@@ -44,7 +44,7 @@ enum Item {
 
 #[derive(Serialize)]
 struct Month {
-    n: u8,
+    n: i32,
     spent_me: u64,
     spent_we: u64,
     items: Vec<Item>,
@@ -137,12 +137,12 @@ pub async fn generate(db: Db, s: Session, f: Json<Filter>) -> Result<Json<Respon
         .chain(transfers)
         .sorted_by_key(|a| (a.0, a.1))
         .rev()
-        .group_by(|a| (a.0.month()));
+        .group_by(|a| (a.0.year() * 12 + a.0.month() as i32 - 1));
 
     let mut pendings = Vec::new();
     let mut months = Vec::new();
 
-    for (month, group) in &groups {
+    for (n, group) in &groups {
         let mut items = Vec::new();
         let mut spent_me = 0;
         let mut spent_we = 0;
@@ -162,7 +162,7 @@ pub async fn generate(db: Db, s: Session, f: Json<Filter>) -> Result<Json<Respon
         }
 
         months.push(Month {
-            n: month as u8,
+            n,
             spent_me,
             spent_we,
             items,
